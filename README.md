@@ -10,14 +10,13 @@ on Moodle.
 
 - **Instructor:** Jon Chun
 - **Schedule:** Tu/Th, 2:40–4:00 PM · Timberlake #5 (Evans Conference Room)
-- **Live site:** _add Netlify URL here once deployed_
 
 ## Repository Structure
 
 ```
 .
 ├── index.html              # Home page
-├── 404.html                 # Not-found page
+├── 404.html                 # Not-found page (not auto-served by `python3 -m http.server`; kept for future hosting)
 ├── core/                    # Syllabus, schedule, assignments, policies, about
 │   ├── syllabus.html
 │   ├── schedule.html
@@ -33,7 +32,6 @@ on Moodle.
 │   ├── test_integration_links.py
 │   ├── test_e2e_site.py
 │   └── requirements.txt
-└── .github/workflows/       # CI: deploy to Netlify on push to main
 ```
 
 The site is static HTML/CSS with no build step or JS framework. Every page
@@ -77,22 +75,6 @@ Run a single test file or test:
 pytest tests/test_unit_html_structure.py -v
 pytest tests/test_integration_links.py::TestNavConsistency::test_nav_links_resolve -v
 ```
-
-## Deployment
-
-The site deploys to Netlify automatically on every push to `main` via
-[`.github/workflows/deploy-netlify.yml`](.github/workflows/deploy-netlify.yml).
-The workflow publishes the repository root and requires two repository
-secrets, set under **Settings → Secrets and variables → Actions**:
-
-| Secret | Description |
-|---|---|
-| `NETLIFY_AUTH_TOKEN` | A Netlify personal access token |
-| `NETLIFY_SITE_ID` | The target Netlify site's API ID |
-
-Until those secrets are configured, the workflow run will fail at the deploy
-step — everything else (checkout) will still succeed. Deployment can also be
-triggered manually from the Actions tab (`workflow_dispatch`).
 
 ## Content Source and Provenance
 

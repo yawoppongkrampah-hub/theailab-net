@@ -109,6 +109,72 @@ class TestNoLeftoverBranding:
         assert not failures, f"Pages with stub/placeholder strings: {failures[:15]}"
 
 
+class TestActiveNavAria:
+    def test_active_nav_link_has_aria_current(self, parsed_pages):
+        """Every non-404 page's active nav link must carry aria-current="page"
+        so assistive tech gets the same "you are here" signal sighted users
+        get from the .active CSS class."""
+        failures = []
+        for path, _, soup in parsed_pages:
+            if path.name == "404.html":
+                continue
+            active = soup.select_one("nav.main-nav a.active")
+            if active is None or active.get("aria-current") != "page":
+                failures.append(_rel(path))
+        assert not failures, f"Pages missing aria-current on active nav link: {failures[:15]}"
+
+
+class TestNotFoundPageLinks:
+    def test_404_links_are_root_relative(self, site_root):
+        """404.html has no working local hosting mechanism to serve it
+        (python3 -m http.server has no custom-404 rewrite), so if it's ever
+        served again via a host-level catch-all rewrite from a non-root URL,
+        its own links must resolve correctly regardless of the request path
+        that triggered it — which requires root-relative hrefs."""
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup((site_root / "404.html").read_text(encoding="utf-8"), "lxml")
+        bad = [
+            a["href"] for a in soup.find_all("a", href=True)
+            if not a["href"].startswith(("/", "#"))
+        ]
+        assert not bad, f"404.html links must be root-relative (same-page '#' anchors are fine): {bad}"
+
+
+class TestSkipLink:
+    def test_all_pages_have_skip_link_to_main(self, parsed_pages):
+        """Every page must have a skip-to-content link as the first focusable
+        element, jumping to a #main-content anchor on <main>."""
+        failures = []
+        for path, _, soup in parsed_pages:
+            skip = soup.select_one("a.skip-link[href='#main-content']")
+            main = soup.select_one("main#main-content")
+            if not skip or not main:
+                failures.append(_rel(path))
+        assert not failures, f"Pages missing skip-link/#main-content pair: {failures[:15]}"
+
+
+class TestTableAccessibility:
+    def test_all_th_have_scope(self, parsed_pages):
+        """Every <th> must declare scope="col" or scope="row" for screen readers."""
+        failures = []
+        for path, _, soup in parsed_pages:
+            for th in soup.find_all("th"):
+                if not th.get("scope"):
+                    failures.append(_rel(path))
+                    break
+        assert not failures, f"Pages with <th> missing scope attribute: {failures[:15]}"
+
+    def test_all_tables_have_caption(self, parsed_pages):
+        """Every <table> must have a <caption> describing its content."""
+        failures = []
+        for path, _, soup in parsed_pages:
+            for table in soup.find_all("table"):
+                if not table.find("caption"):
+                    failures.append(_rel(path))
+                    break
+        assert not failures, f"Pages with <table> missing <caption>: {failures[:15]}"
+
+
 class TestContentNotEmpty:
     def test_page_content_has_minimum_text(self, parsed_pages):
         """Every page's .page-content div must have at least 20 characters of stripped text."""

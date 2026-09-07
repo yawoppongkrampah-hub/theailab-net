@@ -34,8 +34,11 @@ def parsed_pages(all_html_files):
 def nav_pages(all_html_files):
     """All HTML files except 404.html.
 
-    404.html is a server-served fallback page, intentionally not linked from
-    navigation or content, so it's excluded from nav-consistency and
-    reachability-from-index checks.
+    404.html is designed to be served by a host that rewrites unmatched
+    requests to it (e.g., a static-host redirect rule). No such rule is
+    currently configured — the site runs via `python3 -m http.server`,
+    which has no custom-404 mechanism — so 404.html is unreachable in
+    practice today. It's kept as forward-compatible scaffolding and
+    excluded from nav-consistency and reachability checks.
     """
     return [f for f in all_html_files if f.name != "404.html"]
